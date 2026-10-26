@@ -1,30 +1,34 @@
 # Builder image with sbt 2 + Scala 3.9 pre-installed and caches pre-warmed.
 # Projects bring their own build.sbt; this image only provides the toolchain.
+# The sbt and Scala versions (and any extra pre-fetched dependencies) are
+# defined by the warmup/ project, not here.
 FROM eclipse-temurin:21-jdk
 
-ARG SBT_VERSION=2.0.11
-ARG SCALA_VERSION=3.9.0
-
-LABEL org.opencontainers.image.description="sbt ${SBT_VERSION} + Scala ${SCALA_VERSION} on Temurin JDK 21"
+# Version of the sbt runner script; it launches whatever sbt.version a project pins
+ARG SBT_RUNNER_VERSION=2.0.0
 
 # Install the sbt runner
-ADD https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz /tmp/sbt.tgz
+ADD https://github.com/sbt/sbt/releases/download/v${SBT_RUNNER_VERSION}/sbt-${SBT_RUNNER_VERSION}.tgz /tmp/sbt.tgz
 RUN tar -xzf /tmp/sbt.tgz -C /opt && rm /tmp/sbt.tgz \
  # sbt 2 defaults to the native thin client (sbtn), which spawns a background
  # server and fails in non-interactive builds. Run sbt directly in the JVM instead.
- && echo "--server" >> /opt/sbt/conf/sbtopts
-ENV PATH="/opt/sbt/bin:${PATH}"
+ && echo "--server" >> /opt/sbt/conf/sbtopts \
+ # Keep sbt's boot dir, ivy home and caches in a fixed location, so they work
+ # (and stay pre-warmed) no matter which user or $HOME the container runs with.
+ && echo "-Duser.home=/opt/sbt-home" >> /opt/sbt/conf/sbtopts \
+ && mkdir -p /opt/sbt-home
+ENV PATH="/opt/sbt/bin:${PATH}" \
+    COURSIER_CACHE=/opt/sbt-home/.cache/coursier
 
-# Pre-warm: compile a throwaway project so sbt itself, the Scala compiler,
-# stdlib and compiler bridge are already in the caches, then delete the project.
-RUN mkdir -p /tmp/warmup/project /tmp/warmup/src/main/scala \
- && cd /tmp/warmup \
- && echo "sbt.version=${SBT_VERSION}" > project/build.properties \
- && echo 'addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.1")' > project/plugins.sbt \
- && echo "scalaVersion := \"${SCALA_VERSION}\"" > build.sbt \
- && echo "@main def warmup(): Unit = ()" > src/main/scala/Warmup.scala \
- && sbt -batch compile \
- && cd / && rm -rf /tmp/warmup
+# Pre-warm: compile the warmup project (main + test) so sbt, the Scala compiler,
+# compiler bridge and all its dependencies land in the caches, then delete it.
+COPY warmup /tmp/warmup
+RUN cd /tmp/warmup \
+ && sbt -batch Test/compile \
+ && cd / && rm -rf /tmp/warmup \
+ # Any uid must be able to take lock files and add to the caches
+ && chmod -R a+rwX /opt/sbt-home \
+ && mkdir -p /workspace && chmod a+rwx /workspace
 
 WORKDIR /workspace
 CMD ["sbt"]
