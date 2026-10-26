@@ -44,7 +44,6 @@
                   pkgs.gzip
                   pkgs.unzip
                   pkgs.git               # actions/checkout clones with git if present
-                  pkgs.tini              # minimal init as PID 1 (signal forwarding, reaping)
                 ];
               })
               pkgs.dockerTools.binSh          # /bin/sh for Dockerfile RUN steps
@@ -61,10 +60,6 @@
               mkdir -p "$(dirname ${ldso})"
               ln -s ${pkgs.nix-ld}/libexec/nix-ld ${ldso}
             '';
-
-            # tini as PID 1 for `docker run`. Inherited by the Dockerfile image
-            # on top, so its CMD ["sbt"] runs as `tini -- sbt`.
-            config.Entrypoint = [ "/bin/tini" "--" ];
 
             config.Env = [
               "PATH=/bin"
