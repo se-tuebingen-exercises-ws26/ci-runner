@@ -23,6 +23,15 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build Nix base image
+        run: |
+          nix build .#default
+          # Convert to an OCI layout dir that buildx can use as a build context
+          skopeo copy docker-archive:result oci:nix-base-oci:latest
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -39,6 +48,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Only the explicit rule below sets "latest" (not version tags implicitly)
           flavor: |
             latest=false
           tags: |
@@ -53,6 +63,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          build-contexts: |
+            nix-base=oci-layout://${{ github.workspace }}/nix-base-oci:latest
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

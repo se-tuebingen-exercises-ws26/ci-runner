@@ -2,28 +2,41 @@
 # Projects bring their own build.sbt; this image only provides the toolchain.
 # The sbt and Scala versions (and any extra pre-fetched dependencies) are
 # defined by the warmup/ project, not here.
-FROM eclipse-temurin:21-jdk
+#
+# The base image comes from flake.nix (`nix build` + `docker load`); in CI it is
+# passed in as the named build context "nix-base".
+
+# ---------- Stage 1: fetch and trim the sbt runner ----------
+FROM nix-base AS sbt-dist
 
 # Version of the sbt runner script; it launches whatever sbt.version a project pins
 ARG SBT_RUNNER_VERSION=2.0.9
 
-# Install the sbt runner
 ADD https://github.com/sbt/sbt/releases/download/v${SBT_RUNNER_VERSION}/sbt-${SBT_RUNNER_VERSION}.tgz /tmp/sbt.tgz
-RUN tar -xzf /tmp/sbt.tgz -C /opt && rm /tmp/sbt.tgz \
+RUN tar -xzf /tmp/sbt.tgz -C /opt \
+ # The tarball ships sbtn native clients for every OS/arch (~165 MB). Keep only
+ # the one for this platform (for `sbt --client`); drop the Windows script too.
+ && find /opt/sbt/bin \( -name 'sbtn-*' ! -name "sbtn-$(uname -m)-pc-linux" \) -o -name 'sbt.bat' | xargs rm -f \
  # sbt 2 defaults to the native thin client (sbtn), which spawns a background
  # server and fails in non-interactive builds. Run sbt directly in the JVM instead.
  && echo "--server" >> /opt/sbt/conf/sbtopts \
  # Keep sbt's boot dir, ivy home and caches in a fixed location, so they work
  # (and stay pre-warmed) no matter which user or $HOME the container runs with.
- && echo "-Duser.home=/opt/sbt-home" >> /opt/sbt/conf/sbtopts \
- && mkdir -p /opt/sbt-home
+ && echo "-Duser.home=/opt/sbt-home" >> /opt/sbt/conf/sbtopts
+
+# ---------- Stage 2: the actual image ----------
+FROM nix-base
+
+# Only the trimmed runner is copied; the tarball never enters this image
+COPY --from=sbt-dist /opt/sbt /opt/sbt
 ENV PATH="/opt/sbt/bin:${PATH}" \
     COURSIER_CACHE=/opt/sbt-home/.cache/coursier
 
 # Pre-warm: compile the warmup project (main + test) so sbt, the Scala compiler,
 # compiler bridge and all its dependencies land in the caches, then delete it.
 COPY warmup /tmp/warmup
-RUN cd /tmp/warmup \
+RUN mkdir -p /opt/sbt-home \
+ && cd /tmp/warmup \
  && sbt -batch Test/compile \
  && cd / && rm -rf /tmp/warmup \
  # Any uid must be able to take lock files and add to the caches
