@@ -12,6 +12,14 @@
       packages = forAll (pkgs:
         let
           jdk = pkgs.jdk21_headless;
+
+          # Standard glibc loader path that non-Nix binaries expect. GitHub Actions
+          # mounts its own (glibc-linked) Node into job containers at /__e/node*,
+          # which is what runs actions/checkout and other JavaScript actions.
+          ldso =
+            if pkgs.stdenv.hostPlatform.isx86_64
+            then "lib64/ld-linux-x86-64.so.2"
+            else "lib/ld-linux-aarch64.so.1";
         in {
           default = pkgs.dockerTools.buildLayeredImage {
             name = "nix-base";
@@ -35,7 +43,7 @@
                   pkgs.gnutar
                   pkgs.gzip
                   pkgs.unzip
-                  pkgs.gitFull
+                  pkgs.git               # actions/checkout clones with git if present
                 ];
               })
               pkgs.dockerTools.binSh          # /bin/sh for Dockerfile RUN steps
@@ -44,15 +52,22 @@
               pkgs.dockerTools.fakeNss        # /etc/passwd + /etc/group (root, nobody)
             ];
 
-            # Nix images start with no /tmp at all
             extraCommands = ''
+              # Nix images start with no /tmp at all
               mkdir -m 1777 tmp
+              # nix-ld at the standard loader path: lets non-Nix binaries
+              # (like the runner's Node) start, using NIX_LD* below
+              mkdir -p "$(dirname ${ldso})"
+              ln -s ${pkgs.nix-ld}/libexec/nix-ld ${ldso}
             '';
 
             config.Env = [
               "PATH=/bin"
               "JAVA_HOME=${jdk.home}"
               "SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt"
+              # Only read by nix-ld, i.e. only affects non-Nix binaries
+              "NIX_LD=${pkgs.stdenv.cc.bintools.dynamicLinker}"
+              "NIX_LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.glibc ]}"
             ];
           };
         });
