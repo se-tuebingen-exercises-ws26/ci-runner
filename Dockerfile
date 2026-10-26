@@ -20,6 +20,7 @@ ENV PATH="/opt/sbt/bin:${PATH}"
 RUN mkdir -p /tmp/warmup/project /tmp/warmup/src/main/scala \
  && cd /tmp/warmup \
  && echo "sbt.version=${SBT_VERSION}" > project/build.properties \
+ && echo 'addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.1")' > project/plugins.sbt \
  && echo "scalaVersion := \"${SCALA_VERSION}\"" > build.sbt \
  && echo "@main def warmup(): Unit = ()" > src/main/scala/Warmup.scala \
  && sbt -batch compile \
