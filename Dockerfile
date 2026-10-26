@@ -2,7 +2,7 @@
 # Projects bring their own build.sbt; this image only provides the toolchain.
 # The sbt and Scala versions (and any extra pre-fetched dependencies) are
 # defined by the warmup/ project, not here.
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:25-jdk
 
 # Version of the sbt runner script; it launches whatever sbt.version a project pins
 ARG SBT_RUNNER_VERSION=2.0.9
