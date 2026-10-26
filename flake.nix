@@ -17,18 +17,27 @@
             name = "nix-base";
             tag = "latest";
 
-            # Everything in the image, explicitly. Add tools here (e.g. pkgs.git).
             contents = [
-              jdk
-              pkgs.gitFull
-              pkgs.bashInteractive   # sbt runner is a bash script
-              pkgs.coreutils         # uname, dirname, stty, cat, ...
-              pkgs.gnugrep
-              pkgs.gnused
-              pkgs.findutils         # find/xargs, used when trimming the sbt runner
-              pkgs.gnutar
-              pkgs.gzip
-              pkgs.unzip
+              # Everything in the image, explicitly. Add tools here (e.g. pkgs.git).
+              # Merged with buildEnv: plain `contents` links each package in with
+              # lndir, and openjdk's $out/bin is a symlink, which would turn the
+              # whole /bin into a link to the JDK's bin and drop everything else.
+              (pkgs.buildEnv {
+                name = "image-root";
+                pathsToLink = [ "/bin" ];
+                paths = [
+                  jdk
+                  pkgs.bashInteractive   # sbt runner is a bash script
+                  pkgs.coreutils         # uname, dirname, stty, cat, ...
+                  pkgs.gnugrep
+                  pkgs.gnused
+                  pkgs.findutils         # find/xargs, used when trimming the sbt runner
+                  pkgs.gnutar
+                  pkgs.gzip
+                  pkgs.unzip
+                  pkgs.gitFull
+                ];
+              })
               pkgs.dockerTools.binSh          # /bin/sh for Dockerfile RUN steps
               pkgs.dockerTools.usrBinEnv      # /usr/bin/env for the runner's shebang
               pkgs.dockerTools.caCertificates # TLS for dependency downloads

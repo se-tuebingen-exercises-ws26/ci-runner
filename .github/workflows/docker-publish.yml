@@ -32,24 +32,6 @@ jobs:
           # Convert to an OCI layout dir that buildx can use as a build context
           skopeo copy docker-archive:result oci:nix-base-oci:latest
 
-      # TEMPORARY: look inside the image archive itself (no container needed)
-      - name: Inspect Nix base image archive
-        run: |
-          mkdir -p img && tar -xzf result -C img
-          echo "== top-level files"; ls -la img
-          echo "== manifest"; cat img/manifest.json; echo
-          for f in $(find img -name '*.tar'); do
-            if tar -tvf "$f" | grep -qE '(^|\s)\./?bin/'; then
-              echo "== layer with bin/: $f"
-              tar -tvf "$f" | grep -E '\./?(bin|usr/bin|tmp)(/|$)' | head -40
-            fi
-          done
-          echo "== layers containing a coreutils store path:"
-          for f in $(find img -name '*.tar'); do
-            tar -tf "$f" | grep -m1 -- '-coreutils-[0-9.]*/bin/ls$' && echo "   in $f"
-          done
-          echo "== docker info"; docker info --format '{{.ServerVersion}} {{.Driver}} {{.DriverStatus}}'
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
