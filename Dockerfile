@@ -5,7 +5,7 @@
 FROM eclipse-temurin:21-jdk
 
 # Version of the sbt runner script; it launches whatever sbt.version a project pins
-ARG SBT_RUNNER_VERSION=2.0.0
+ARG SBT_RUNNER_VERSION=2.0.9
 
 # Install the sbt runner
 ADD https://github.com/sbt/sbt/releases/download/v${SBT_RUNNER_VERSION}/sbt-${SBT_RUNNER_VERSION}.tgz /tmp/sbt.tgz
