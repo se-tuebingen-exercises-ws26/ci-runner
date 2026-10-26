@@ -2,7 +2,7 @@
 # Projects bring their own build.sbt; this image only provides the toolchain.
 FROM eclipse-temurin:21-jdk
 
-ARG SBT_VERSION=2.0.0
+ARG SBT_VERSION=2.0.11
 ARG SCALA_VERSION=3.9.0
 
 LABEL org.opencontainers.image.description="sbt ${SBT_VERSION} + Scala ${SCALA_VERSION} on Temurin JDK 21"
