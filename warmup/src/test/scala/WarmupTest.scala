@@ -1,1 +1,1 @@
-class WarmupTest
+class WarmupTest extends munit.FunSuite
