@@ -13,7 +13,9 @@ FROM nix-base AS sbt-dist
 ARG SBT_RUNNER_VERSION=2.0.9
 
 ADD https://github.com/sbt/sbt/releases/download/v${SBT_RUNNER_VERSION}/sbt-${SBT_RUNNER_VERSION}.tgz /tmp/sbt.tgz
-RUN tar -xzf /tmp/sbt.tgz -C /opt \
+RUN mkdir -p /opt \
+ # (the Nix base image has no /opt, unlike Debian/Ubuntu-based images)
+ && tar -xzf /tmp/sbt.tgz -C /opt \
  # The tarball ships sbtn native clients for every OS/arch (~165 MB). Keep only
  # the one for this platform (for `sbt --client`); drop the Windows script too.
  && find /opt/sbt/bin \( -name 'sbtn-*' ! -name "sbtn-$(uname -m)-pc-linux" \) -o -name 'sbt.bat' | xargs rm -f \
