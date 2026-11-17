@@ -45,5 +45,16 @@ RUN mkdir -p /opt/sbt-home \
  && chmod -R a+rwX /opt/sbt-home \
  && mkdir -p /workspace && chmod a+rwx /workspace
 
+# Pre-warm old versions: compile the warmup project (main + test) so sbt, the Scala compiler,
+# compiler bridge and all its dependencies land in the caches, then delete it.
+COPY warmup_old /tmp/warmup_old
+RUN mkdir -p /opt/sbt-home \
+ && cd /tmp/warmup_old \
+ && sbt -batch Test/compile \
+ && cd / && rm -rf /tmp/warmup_old \
+ # Any uid must be able to take lock files and add to the caches
+ && chmod -R a+rwX /opt/sbt-home \
+ && mkdir -p /workspace && chmod a+rwx /workspace
+
 WORKDIR /workspace
 CMD ["sbt"]
