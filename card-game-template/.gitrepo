@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:se-tuebingen-exercises-ws26/card-game-template
+	branch = main
+	commit = 16129ef335eec2a4c2d10c42632230224c5e8280
+	parent = 76143bd6d4980a255b90011ade9ae15590d00135
+	method = merge
+	cmdver = 0.4.9

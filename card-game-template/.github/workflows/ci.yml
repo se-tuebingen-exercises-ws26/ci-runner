@@ -1,0 +1,23 @@
+name: '[CI] Game'
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ratatoskr
+    container:
+        image: ghcr.io/se-tuebingen-exercises-ws26/ci-runner:latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v7
+    - name: Compile game
+      run: |
+        sbt compile
+        sbt run
+    - name: Generate docs
+      run: |
+        sbt doc

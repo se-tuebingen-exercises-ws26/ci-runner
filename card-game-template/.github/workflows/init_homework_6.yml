@@ -1,0 +1,77 @@
+name: Prepare repository
+
+# This action gets run upon creating a new repository for the student.
+#
+# If you found this as a student, congratulations!
+# ... but don't edit this file, we'll know ;)
+
+on:
+  pull_request:
+    types:
+      - opened
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs: 
+  init_hw:
+    runs-on: self-hosted
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v5 # This is necessary for some reason...
+
+      - name: Create labels
+        if: ${{ github.event.number == 1 }}
+        run: |
+          gh label create "aufgabe-2" --description "Aufgabe 2" --color A6CEE3 --force
+          gh label create "aufgabe-3" --description "Aufgabe 3" --color 1F78B4 --force
+          gh label create "aufgabe-4" --description "Aufgabe 4" --color B2DF8A --force
+
+          git config --global user.email "homework.ci@example.com"
+          git config --global user.name "Homework CI"
+
+          git checkout -b hw6/p4/rm
+          git rm src/main/scala/game/ui/Hand.scala
+          git rm src/main/scala/game/Card.scala
+          git commit -m "Remove Hand and Card"
+          git push -u origin hw6/p4/rm
+          git checkout -b hw6/p4/add
+          git revert HEAD
+          git push -u origin hw6/p4/add
+          gh pr create --title "Hand.scala and Card.scala" --body "" --base hw6/p4/rm --head hw6/p4/add
+
+          git checkout -b hw6/p3/rm
+          git rm src/main/scala/game/Player.scala
+          git commit -m "Remove Player"
+          git push -u origin hw6/p3/rm
+          git checkout -b hw6/p3/add
+          git revert HEAD
+          git push -u origin hw6/p3/add
+          gh pr create --title "Player.scala" --body "" --base hw6/p3/rm --head hw6/p3/add
+
+          git checkout -b hw6/p2/rm
+          git rm src/main/scala/game/PhysicalCard.scala
+          git rm src/main/scala/game/ui/CardImages.scala
+          git commit -m "Remove PhysicalCard and CardImages"
+          git push -u origin hw6/p2/rm
+          git checkout -b hw6/p2/add
+          git revert HEAD
+          git push -u origin hw6/p2/add
+          gh pr create --title "PhysicalCard.scala and CardImages.scala" --body "" --base hw6/p2/rm --head hw6/p2/add
+
+          git checkout -b hw6/p1/rm
+          git rm src/main/scala/game/ui/CardStack.scala
+          git commit -m "Remove CardStack.scala"
+          git push -u origin hw6/p1/rm
+          git checkout -b hw6/p1/add
+          git revert HEAD
+          git push -u origin hw6/p1/add
+          gh pr create --title "CardStack.scala" --body "" --base hw6/p1/rm --head hw6/p1/add
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          ACTIONS_RUNNER_DEBUG: true
+          DEFAULT_BRANCH: main

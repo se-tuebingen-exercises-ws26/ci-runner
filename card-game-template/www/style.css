@@ -1,0 +1,58 @@
+body {
+  margin: 0;
+}
+#content {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+  width: 100dvw;
+  height: 100dvh;
+  background: green;
+}
+.card {
+  position: absolute;
+}
+.button {
+  position: absolute;
+}
+.button button {
+  width: 100%;
+  height: 100%;
+}
+.flip-card-outer {
+  background-color: transparent;
+  perspective: 1000px;
+}
+.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.2s;
+  transform-style: preserve-3d;
+}
+.flip-card-front {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+}
+.card-img {
+  width: 100%;
+  height: 100%;
+}
+.text {
+  position: absolute;
+  color: white;
+}
