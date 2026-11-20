@@ -56,5 +56,15 @@ RUN mkdir -p /opt/sbt-home \
  && chmod -R a+rwX /opt/sbt-home \
  && mkdir -p /workspace && chmod a+rwx /workspace
 
+# Pre-warm card game
+COPY card-game-template /tmp/warmup_cg
+RUN mkdir -p /opt/sbt-home \
+ && cd /tmp/warmup_cg \
+ && sbt -batch Test/compile \
+ && cd / && rm -rf /tmp/warmup_cg \
+ # Any uid must be able to take lock files and add to the caches
+ && chmod -R a+rwX /opt/sbt-home \
+ && mkdir -p /workspace && chmod a+rwx /workspace
+
 WORKDIR /workspace
 CMD ["sbt"]
